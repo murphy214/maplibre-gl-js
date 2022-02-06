@@ -3,6 +3,8 @@ import Point from '@mapbox/point-geometry';
 import mvt from '@mapbox/vector-tile';
 import type {VectorTileFeature, VectorTileLayer, VectorTile} from '@mapbox/vector-tile';
 const toGeoJSON = mvt.VectorTileFeature.prototype.toGeoJSON;
+const toLrsGeoJSON = mvt.VectorTileFeature.prototype.toLrsGeoJSON;
+
 import EXTENT from '../data/extent';
 
 // The feature type used by geojson-vt and supercluster. Should be extracted to
@@ -11,28 +13,39 @@ export type Feature = {
     type: 1;
     id: any;
     tags: {[_: string]: string | number | boolean};
+    distances: number[]|number[][];
+    bmp:number;
+    emp:number;
     geometry: Array<[number, number]>;
 } | {
     type: 2 | 3;
     id: any;
     tags: {[_: string]: string | number | boolean};
+    distances: number[]|number[][];
+    bmp:number;
+    emp:number;
     geometry: Array<Array<[number, number]>>;
 };
 
 class FeatureWrapper implements VectorTileFeature {
     _feature: Feature;
-
     extent: number;
     type: 1 | 2 | 3;
     id: number;
     properties: {[_: string]: string | number | boolean};
-
+    distances: number[]|number[][];
+    bmp:number;
+    emp:number;
     constructor(feature: Feature) {
         this._feature = feature;
 
         this.extent = EXTENT;
         this.type = feature.type;
         this.properties = feature.tags;
+        this.distances = feature.distances;
+        this.bmp = feature.bmp;
+        this.emp = feature.emp;
+        
 
         // If the feature has a top-level `id` property, copy it over, but only
         // if it can be coerced to an integer, because this wrapper is used for
@@ -67,6 +80,10 @@ class FeatureWrapper implements VectorTileFeature {
 
     toGeoJSON(x: number, y: number, z: number) {
         return toGeoJSON.call(this, x, y, z);
+    }
+    
+    toLrsGeoJSON(tileId:{x:number,y:number,z:number},bmpEmp:{bmp:number,emp:number}) {
+        return toLrsGeoJSON.call(this, tileId, bmpEmp);
     }
 }
 
